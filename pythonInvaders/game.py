@@ -19,23 +19,30 @@ class Player:
   xPos = 400.0
   yPos = 550.0
 
-  movementSpeed = 0.1
+  movementSpeed = 5.0
+
+  shootCoolDownCounter = 0.0
+  shootCoolDown = 200.0 # Five shoots each second :-)
 
   def __init__(self, screen, projectiles):
     self.screen = screen
     self.projectiles = projectiles
     self.playerSprite = pygame.image.load('data/player.png').convert()
 
-  def update(self, keys):
+  def update(self, keys, time):
+    self.shootCoolDownCounter += time
+    canShoot = self.shootCoolDownCounter >= self.shootCoolDown
+
+    if canShoot and keys[pygame.K_SPACE]:
+      self.shootCoolDownCounter = 0.0
+      projectile = Projectile(self.screen, self.xPos, self.yPos, -1)
+      self.projectiles.append(projectile)
+
     if keys[pygame.K_RIGHT]: 
       self.xPos += self.movementSpeed
 
     if keys[pygame.K_LEFT]: 
       self.xPos -= self.movementSpeed
-    
-    if keys[pygame.K_SPACE]:
-#      projectile = Projectile(self.screen, self.xPos, self.yPos, -1)
-      self.projectiles.append(projectile)
 
     self.screen.blit(self.playerSprite, (self.xPos, self.yPos))
     
@@ -46,7 +53,7 @@ class Projectile:
   xPos = None
   yPos = None
 
-  movementSpeed = 0.3
+  movementSpeed = 3.0
   direction = None
 
   def __init__(self, screen, x, y, direction):
@@ -70,13 +77,19 @@ def main():
   background = background.convert()
   background.fill((0, 0, 0))
 
-  screen.blit(background, (0,0))
   pygame.display.flip()
 
   projectiles = []
   player = Player(screen, projectiles)
 
+  maxFps = 60
+  clock = pygame.time.Clock()
+
   while True:
+    
+    timePassed = clock.tick_busy_loop(maxFps)
+    screen.blit(background, (0,0))
+
     for event in pygame.event.get():
       if (event.type == pygame.QUIT or event.type == pygame.KEYDOWN 
           and event.key == pygame.K_ESCAPE) : 
@@ -84,7 +97,7 @@ def main():
 
     keys = pygame.key.get_pressed()
 
-    player.update(keys)
+    player.update(keys, timePassed)
 
     for projectile in projectiles:
       projectile.update()
