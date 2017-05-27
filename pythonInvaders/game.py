@@ -24,6 +24,10 @@ class Entity:
     self.height = height
     self.movementSpeed = speed
 
+  def inside(self, x, y, width, height):
+    return ((self.xPos > x and (self.xPos + self.width) < x + width) and (
+            self.yPos > y and (self.yPos + self.height) < y + height))
+
   # Overlapping?
   def intersects(self, x, y, width, height):
     return ((self.xPos > x and self.xPos < (x + width) or 
@@ -55,16 +59,23 @@ class Player(Entity):
 
     if canShoot and keys[pygame.K_SPACE]:
       self.shootCoolDownCounter = 0.0
-      print self.width
       projectile = Projectile(self.screen, self.xPos + self.halfWidth, 
         self.yPos, -1)
       self.projectiles.append(projectile)
-
+    
+    direction = 0
     if keys[pygame.K_RIGHT]: 
-      self.xPos += self.movementSpeed
-
+      direction = 1
     if keys[pygame.K_LEFT]: 
-      self.xPos -= self.movementSpeed
+      direction = -1
+
+    if direction != 0:
+      self.xPos += direction * self.movementSpeed
+
+    if not self.inside(0, 0, 800, 600):
+      self.xPos += -direction * self.movementSpeed
+
+    
 
     self.screen.blit(self.playerSprite, (self.xPos, self.yPos))
     
@@ -77,13 +88,18 @@ class Projectile(Entity):
   def __init__(self, screen, x, y, direction):
     self.sprite = pygame.image.load('data/projectile.png').convert()
     Entity.__init__(self, x, y, self.sprite.get_width(), 
-      self.sprite.get_height(),  3.0)
+      self.sprite.get_height(),  10.0)
     self.screen = screen
     self.direction = direction
 
   def update(self):
     self.yPos += self.movementSpeed * self.direction
     self.screen.blit(self.sprite, (self.xPos, self.yPos))
+
+class Enemie(Entity):
+
+  def __init__(self):
+    Entity.__init__(self, 0, 0, 0, 0, 0)
 
 def main():
 
@@ -107,7 +123,6 @@ def main():
   clock = pygame.time.Clock()
 
   while True:
-    
     timePassed = clock.tick_busy_loop(maxFps)
     screen.blit(background, (0,0))
 
@@ -117,7 +132,6 @@ def main():
         sys.exit()
 
     keys = pygame.key.get_pressed()
-
     player.update(keys, timePassed)
 
     projectiles[:] = [proj for proj in projectiles 
