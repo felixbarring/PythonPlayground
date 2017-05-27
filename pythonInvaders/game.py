@@ -1,33 +1,53 @@
 #!/usr/bin/python
 
 try:
-	import sys
-	import os
-	import pygame
-	from pygame.locals import *
+  import sys
+  import os
+  import pygame
+  from pygame.locals import *
 except ImportError, err:
   print "Failed to load module. %s" % (err)
   
-screenWidth = 800
-screenHeight = 600
+class Entity: 
+  xPos = None
+  yPos = None
 
-class Player:
+  width = None
+  height = None
+    
+  movementSpeed = None
+  
+  def __init__(self, xPos, yPos, width, height, speed):
+    self.xPos = xPos
+    self.yPos = yPos
+    self.width = width
+    self.height = height
+    self.movementSpeed = speed
+
+  # Overlapping?
+  def intersects(self, x, y, width, height):
+    return ((self.xPos > x and self.xPos < (x + width) or 
+            ((self.xPos + self.width) > x and (self.xPos + self.width) < (x + width))) and (
+            (self.yPos > y and self.yPos < (y + height) or  
+            ((self.yPos + self.height) > y and (self.yPos + self.height) > (y + height)))))
+
+class Player(Entity):
   screen = None
   playerSprite = None
   projectiles = None
   
-  xPos = 400.0
-  yPos = 550.0
-
-  movementSpeed = 5.0
-
   shootCoolDownCounter = 0.0
   shootCoolDown = 200.0 # Five shoots each second :-)
+
+  halfWidth = None
 
   def __init__(self, screen, projectiles):
     self.screen = screen
     self.projectiles = projectiles
     self.playerSprite = pygame.image.load('data/player.png').convert()
+    Entity.__init__(self, 400, 550, self.playerSprite.get_width(), 
+      self.playerSprite.get_height(), 5.0)
+    self.halfWidth = self.width / 2.0
 
   def update(self, keys, time):
     self.shootCoolDownCounter += time
@@ -35,7 +55,9 @@ class Player:
 
     if canShoot and keys[pygame.K_SPACE]:
       self.shootCoolDownCounter = 0.0
-      projectile = Projectile(self.screen, self.xPos, self.yPos, -1)
+      print self.width
+      projectile = Projectile(self.screen, self.xPos + self.halfWidth, 
+        self.yPos, -1)
       self.projectiles.append(projectile)
 
     if keys[pygame.K_RIGHT]: 
@@ -46,21 +68,17 @@ class Player:
 
     self.screen.blit(self.playerSprite, (self.xPos, self.yPos))
     
-class Projectile:
+class Projectile(Entity):
   screen = None
   sprite = None
 
-  xPos = None
-  yPos = None
-
-  movementSpeed = 3.0
   direction = None
 
   def __init__(self, screen, x, y, direction):
-    self.screen = screen
     self.sprite = pygame.image.load('data/projectile.png').convert()
-    self.xPos = x
-    self.yPos = y
+    Entity.__init__(self, x, y, self.sprite.get_width(), 
+      self.sprite.get_height(),  3.0)
+    self.screen = screen
     self.direction = direction
 
   def update(self):
@@ -70,6 +88,9 @@ class Projectile:
 def main():
 
   pygame.init()
+
+  screenWidth = 800
+  screenHeight = 600
   screen = pygame.display.set_mode((screenWidth, screenHeight))
   pygame.display.set_caption('Python Invaders')
 
@@ -98,6 +119,9 @@ def main():
     keys = pygame.key.get_pressed()
 
     player.update(keys, timePassed)
+
+    projectiles[:] = [proj for proj in projectiles 
+      if proj.intersects(0, 0, screenWidth, screenHeight)]
 
     for projectile in projectiles:
       projectile.update()
