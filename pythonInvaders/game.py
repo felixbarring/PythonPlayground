@@ -72,10 +72,9 @@ class Player(Entity):
     if direction != 0:
       self.xPos += direction * self.movementSpeed
 
+    # TODO Remove the hardcode of the screen size...
     if not self.inside(0, 0, 800, 600):
       self.xPos += -direction * self.movementSpeed
-
-    
 
     self.screen.blit(self.playerSprite, (self.xPos, self.yPos))
     
@@ -97,9 +96,54 @@ class Projectile(Entity):
     self.screen.blit(self.sprite, (self.xPos, self.yPos))
 
 class Enemie(Entity):
+  screen = None
+  direction = None
+  sprite = None
 
-  def __init__(self):
-    Entity.__init__(self, 0, 0, 0, 0, 0)
+  def __init__(self, screen, x, y):
+    self.screen = screen
+    self.direction = 1
+    self.sprite = pygame.image.load('data/player.png').convert()
+    Entity.__init__(self, x, y + 10, self.sprite.get_width(), 
+      self.sprite.get_height(), 0)
+
+  def update(self):
+    self.xPos += self.direction
+    self.screen.blit(self.sprite, (self.xPos, self.yPos))
+
+  def switchDirection(self):
+    self.direction = -self.direction
+
+  def moveDown(self):
+    self.yPos += self.height
+    
+
+class EnemieManager:
+  screen = None
+  enemies = None
+
+  rows = 10
+  columns = 3
+
+  def __init__(self, screen):
+    self.screen = screen
+    self.enemies = []
+    
+    for i in range(0, self.columns):
+      for j in range(0, self.rows):
+        self.enemies.append(Enemie(self.screen, j * 40, i * 30))
+
+  def update(self):
+    map(Enemie.update, self.enemies)
+    switch = False
+    for x in self.enemies:
+      if not x.inside(0, 0, 800, 600):
+        switch = True
+        break
+    if switch:
+      map(Enemie.switchDirection, self.enemies)
+      map(Enemie.moveDown, self.enemies)
+
 
 def main():
 
@@ -118,6 +162,7 @@ def main():
 
   projectiles = []
   player = Player(screen, projectiles)
+  enemiManager = EnemieManager(screen)
 
   maxFps = 60
   clock = pygame.time.Clock()
@@ -133,6 +178,7 @@ def main():
 
     keys = pygame.key.get_pressed()
     player.update(keys, timePassed)
+    enemiManager.update()
 
     projectiles[:] = [proj for proj in projectiles 
       if proj.intersects(0, 0, screenWidth, screenHeight)]
