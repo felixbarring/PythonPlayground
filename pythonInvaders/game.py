@@ -28,12 +28,11 @@ class Entity:
     return ((self.xPos > x and (self.xPos + self.width) < x + width) and (
             self.yPos > y and (self.yPos + self.height) < y + height))
 
-  # Overlapping?
   def intersects(self, x, y, width, height):
     return ((self.xPos > x and self.xPos < (x + width) or 
             ((self.xPos + self.width) > x and (self.xPos + self.width) < (x + width))) and (
             (self.yPos > y and self.yPos < (y + height) or  
-            ((self.yPos + self.height) > y and (self.yPos + self.height) > (y + height)))))
+            ((self.yPos + self.height) > y and (self.yPos + self.height) < (y + height)))))
 
 class Player(Entity):
   screen = None
@@ -99,6 +98,7 @@ class Enemie(Entity):
   screen = None
   direction = None
   sprite = None
+  hp = None
 
   def __init__(self, screen, x, y):
     self.screen = screen
@@ -106,27 +106,37 @@ class Enemie(Entity):
     self.sprite = pygame.image.load('data/player.png').convert()
     Entity.__init__(self, x, y + 10, self.sprite.get_width(), 
       self.sprite.get_height(), 0)
+    self.hp = 3
 
   def update(self):
     self.xPos += self.direction
-    self.screen.blit(self.sprite, (self.xPos, self.yPos))
+    if self.hurt:
+      self.screen.blit(self.sprite, (self.xPos, self.yPos))
 
   def switchDirection(self):
     self.direction = -self.direction
 
   def moveDown(self):
     self.yPos += self.height
+
+  def hurt(self):
+    self.hp = self.hp - 1
+
+  def isAlive(self):
+    return self.hp > 0
     
 
 class EnemieManager:
   screen = None
+  playerShoots = None
   enemies = None
 
   rows = 10
   columns = 3
 
-  def __init__(self, screen):
+  def __init__(self, screen, playerShoots):
     self.screen = screen
+    self.playerShoots = playerShoots
     self.enemies = []
     
     for i in range(0, self.columns):
@@ -137,6 +147,16 @@ class EnemieManager:
     map(Enemie.update, self.enemies)
     switch = False
     for x in self.enemies:
+      
+      for p in self.playerShoots:
+        if p.intersects(x.xPos, x.yPos, x.width, x.height):
+          self.playerShoots.remove(p)
+          x.hurt()
+          print x.hp
+          if not x.isAlive():
+            self.enemies.remove(x)
+      
+      # TODO Remove the hardecoded screen stuff :o
       if not x.inside(0, 0, 800, 600):
         switch = True
         break
@@ -162,7 +182,7 @@ def main():
 
   projectiles = []
   player = Player(screen, projectiles)
-  enemiManager = EnemieManager(screen)
+  enemiManager = EnemieManager(screen, projectiles)
 
   maxFps = 60
   clock = pygame.time.Clock()
