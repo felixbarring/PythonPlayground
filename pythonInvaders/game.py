@@ -9,13 +9,6 @@ except ImportError, err:
   print "Failed to load module. %s" % (err)
   
 class Entity: 
-  xPos = None
-  yPos = None
-
-  width = None
-  height = None
-    
-  movementSpeed = None
   
   def __init__(self, xPos, yPos, width, height, speed):
     self.xPos = xPos
@@ -35,14 +28,8 @@ class Entity:
             ((self.yPos + self.height) > y and (self.yPos + self.height) < (y + height)))))
 
 class Player(Entity):
-  screen = None
-  playerSprite = None
-  projectiles = None
   
-  shootCoolDownCounter = 0.0
   shootCoolDown = 200.0 # Five shoots each second :-)
-
-  halfWidth = None
 
   def __init__(self, screen, projectiles):
     self.screen = screen
@@ -51,6 +38,7 @@ class Player(Entity):
     Entity.__init__(self, 400, 550, self.playerSprite.get_width(), 
       self.playerSprite.get_height(), 5.0)
     self.halfWidth = self.width / 2.0
+    self.shootCoolDownCounter = 0
 
   def update(self, keys, time):
     self.shootCoolDownCounter += time
@@ -78,10 +66,6 @@ class Player(Entity):
     self.screen.blit(self.playerSprite, (self.xPos, self.yPos))
     
 class Projectile(Entity):
-  screen = None
-  sprite = None
-
-  direction = None
 
   def __init__(self, screen, x, y, direction):
     self.sprite = pygame.image.load('data/projectile.png').convert()
@@ -95,10 +79,6 @@ class Projectile(Entity):
     self.screen.blit(self.sprite, (self.xPos, self.yPos))
 
 class Enemie(Entity):
-  screen = None
-  direction = None
-  sprite = None
-  hp = None
 
   def __init__(self, screen, x, y):
     self.screen = screen
@@ -127,9 +107,6 @@ class Enemie(Entity):
     
 
 class EnemieManager:
-  screen = None
-  playerShoots = None
-  enemies = None
 
   rows = 10
   columns = 3
