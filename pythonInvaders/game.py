@@ -27,6 +27,39 @@ class Entity:
             (self.yPos > y and self.yPos < (y + height) or  
             ((self.yPos + self.height) > y and (self.yPos + self.height) < (y + height)))))
 
+class Blinker:
+  
+  blinkInterval = 10
+  blinks = 3
+
+  def __init__(self):
+    self.accumulatedTime = 0
+    self.accumulatedBlinks = 0
+    self.active = False
+    self.shouldD = False
+
+  def activate(self):
+    self.active = True
+
+  def shouldDraw(self):
+    return not self.active or self.shouldD
+
+  def update(self, time):
+    if not self.active:
+      return
+
+    self.accumulatedTime += time
+    if self.accumulatedTime > Blinker.blinkInterval:
+      self.accumulatedTime = 0
+      self.shouldD = not self.shouldD
+      self.accumulatedBlinks += 1
+
+      if self.accumulatedBlinks >= Blinker.blinks:
+        self.active = False
+        self.accumulatedBlinks = 0
+        self.shouldD = False
+  
+
 class Player(Entity):
   
   shootCoolDown = 200.0 # Five shoots each second :-)
@@ -39,6 +72,7 @@ class Player(Entity):
       self.playerSprite.get_height(), 5.0)
     self.halfWidth = self.width / 2.0
     self.shootCoolDownCounter = 0
+    self.hp = 5
 
   def update(self, keys, time):
     self.shootCoolDownCounter += time
@@ -87,10 +121,12 @@ class Enemie(Entity):
     Entity.__init__(self, x, y + 10, self.sprite.get_width(), 
       self.sprite.get_height(), 0)
     self.hp = 3
+    self.blinker = Blinker()
 
   def update(self):
     self.xPos += self.direction
-    if self.hurt:
+    self.blinker.update(1)
+    if self.blinker.shouldDraw():
       self.screen.blit(self.sprite, (self.xPos, self.yPos))
 
   def switchDirection(self):
@@ -100,6 +136,7 @@ class Enemie(Entity):
     self.yPos += self.height
 
   def hurt(self):
+    self.blinker.activate()
     self.hp = self.hp - 1
 
   def isAlive(self):
@@ -115,9 +152,11 @@ class EnemieManager:
     self.screen = screen
     self.playerShoots = playerShoots
     self.enemies = []
-    
-    for i in range(0, self.columns):
-      for j in range(0, self.rows):
+    self.createEnemies()
+
+  def createEnemies(self):
+    for i in range(0, EnemieManager.columns):
+      for j in range(0, EnemieManager.rows):
         self.enemies.append(Enemie(self.screen, j * 40, i * 30))
 
   def update(self):
@@ -129,7 +168,6 @@ class EnemieManager:
         if p.intersects(x.xPos, x.yPos, x.width, x.height):
           self.playerShoots.remove(p)
           x.hurt()
-          print x.hp
           if not x.isAlive():
             self.enemies.remove(x)
       
@@ -140,6 +178,9 @@ class EnemieManager:
     if switch:
       map(Enemie.switchDirection, self.enemies)
       map(Enemie.moveDown, self.enemies)
+
+    if len(self.enemies) == 0:
+      self.createEnemies()
 
 
 def main():
