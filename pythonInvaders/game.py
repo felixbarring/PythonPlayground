@@ -6,6 +6,10 @@ try:
     from pygame.locals import *
 except ImportError, err:
     print "Failed to load module. %s" % (err)
+
+enemieSprite = 'data/enemie.png'
+projectileSprite = 'data/projectile.png'
+playerSprite = 'data/player.png'
   
 class Entity: 
   
@@ -67,7 +71,7 @@ class Player(Entity):
     def __init__(self, screen, projectiles):
         self.screen = screen
         self.projectiles = projectiles
-        self.playerSprite = pygame.image.load('data/player.png').convert()
+        self.playerSprite = pygame.image.load(playerSprite).convert()
         Entity.__init__(self, 400, 550, self.playerSprite.get_width(), 
           self.playerSprite.get_height(), 5.0)
         self.halfWidth = self.width / 2.0
@@ -102,7 +106,7 @@ class Player(Entity):
 class Projectile(Entity):
 
     def __init__(self, screen, x, y, direction):
-        self.sprite = pygame.image.load('data/projectile.png').convert()
+        self.sprite = pygame.image.load(projectileSprite).convert()
         Entity.__init__(self, x, y, self.sprite.get_width(), 
           self.sprite.get_height(),  10.0)
         self.screen = screen
@@ -117,7 +121,7 @@ class Enemie(Entity):
     def __init__(self, screen, x, y):
         self.screen = screen
         self.direction = 1
-        self.sprite = pygame.image.load('data/player.png').convert()
+        self.sprite = pygame.image.load(enemieSprite).convert()
         Entity.__init__(self, x, y + 10, self.sprite.get_width(), 
           self.sprite.get_height(), 0)
         self.hp = 3
