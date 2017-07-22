@@ -7,9 +7,14 @@ try:
 except ImportError, err:
     print "Failed to load module. %s" % (err)
 
+windowTitle = 'Python Invaders'
+
 enemieSprite = 'data/enemie.png'
 projectileSprite = 'data/projectile.png'
 playerSprite = 'data/player.png'
+
+screenWidth = 800
+screenHeight = 600
   
 class Entity: 
   
@@ -63,7 +68,6 @@ class Blinker:
             self.accumulatedBlinks = 0
             self.shouldD = False
 
-
 class Player(Entity):
   
     shootCoolDown = 200.0 # Five shoots each second :-)
@@ -72,7 +76,8 @@ class Player(Entity):
         self.screen = screen
         self.projectiles = projectiles
         self.playerSprite = pygame.image.load(playerSprite).convert()
-        Entity.__init__(self, 400, 550, self.playerSprite.get_width(), 
+        Entity.__init__(self, screenWidth / 2, screenHeight - 50, 
+                        self.playerSprite.get_width(), 
           self.playerSprite.get_height(), 5.0)
         self.halfWidth = self.width / 2.0
         self.shootCoolDownCounter = 0
@@ -119,6 +124,7 @@ class Projectile(Entity):
 class Enemie(Entity):
 
     def __init__(self, screen, x, y):
+        self.oldXPos = x
         self.screen = screen
         self.direction = 1
         self.sprite = pygame.image.load(enemieSprite).convert()
@@ -128,6 +134,7 @@ class Enemie(Entity):
         self.blinker = Blinker()
 
     def update(self):
+        self.oldXPos = self.xPos
         self.xPos += self.direction
         self.blinker.update(1)
         if self.blinker.shouldDraw():
@@ -139,6 +146,10 @@ class Enemie(Entity):
     def moveDown(self):
         self.yPos += self.height
     
+    def resetToOldPosition(self):
+        self.xPos = self.oldXPos
+        
+    
     def hurt(self):
         self.blinker.activate()
         self.hp = self.hp - 1
@@ -146,7 +157,6 @@ class Enemie(Entity):
     def isAlive(self):
         return self.hp > 0
     
-
 class EnemieManager:
 
     rows = 10
@@ -165,7 +175,6 @@ class EnemieManager:
 
     def update(self):
         map(Enemie.update, self.enemies)
-        switch = False
         for x in self.enemies:
             for p in self.playerShoots:
                 if p.intersects(x.xPos, x.yPos, x.width, x.height):
@@ -175,22 +184,20 @@ class EnemieManager:
                         self.enemies.remove(x)
         
             # TODO Remove the hardecoded screen stuff :o
-            if not x.inside(0, 0, 800, 600):
+            if not x.inside(0, 0, screenWidth, screenHeight):
                 map(Enemie.switchDirection, self.enemies)
                 map(Enemie.moveDown, self.enemies)
+                map(Enemie.resetToOldPosition, self.enemies)
         
             if len(self.enemies) == 0:
                 self.createEnemies()
-
 
 def main():
 
     pygame.init()
     
-    screenWidth = 800
-    screenHeight = 600
     screen = pygame.display.set_mode((screenWidth, screenHeight))
-    pygame.display.set_caption('Python Invaders')
+    pygame.display.set_caption(windowTitle)
     
     background = pygame.Surface(screen.get_size())
     background = background.convert()
