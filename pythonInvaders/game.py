@@ -89,7 +89,9 @@ class Player(Entity):
         
         if canShoot and keys[pygame.K_SPACE]:
             self.shootCoolDownCounter = 0.0
-            projectile = Projectile(self.screen, self.xPos + self.halfWidth, 
+            # TODO This assumes that the Player and The Projectil has the same
+            # width.
+            projectile = Projectile(self.screen, self.xPos, 
               self.yPos, -1)
             self.projectiles.append(projectile)
         
@@ -103,7 +105,7 @@ class Player(Entity):
             self.xPos += direction * self.movementSpeed
         
         # TODO Remove the hardcode of the screen size...
-        if not self.inside(0, 0, 800, 600):
+        if not self.inside(0, 0, screenWidth, screenHeight):
             self.xPos += -direction * self.movementSpeed
         
         self.screen.blit(self.playerSprite, (self.xPos, self.yPos))
@@ -148,7 +150,6 @@ class Enemie(Entity):
     
     def resetToOldPosition(self):
         self.xPos = self.oldXPos
-        
     
     def hurt(self):
         self.blinker.activate()
