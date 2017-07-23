@@ -75,7 +75,7 @@ class Player(Entity):
     def __init__(self, screen, projectiles):
         self.screen = screen
         self.projectiles = projectiles
-        self.playerSprite = pygame.image.load(playerSprite).convert()
+        self.playerSprite = pygame.image.load(playerSprite).convert_alpha()
         Entity.__init__(self, screenWidth / 2, screenHeight - 50, 
                         self.playerSprite.get_width(), 
           self.playerSprite.get_height(), 5.0)
@@ -113,7 +113,7 @@ class Player(Entity):
 class Projectile(Entity):
 
     def __init__(self, screen, x, y, direction):
-        self.sprite = pygame.image.load(projectileSprite).convert()
+        self.sprite = pygame.image.load(projectileSprite).convert_alpha()
         Entity.__init__(self, x, y, self.sprite.get_width(), 
           self.sprite.get_height(),  10.0)
         self.screen = screen
@@ -129,7 +129,7 @@ class Enemie(Entity):
         self.oldXPos = x
         self.screen = screen
         self.direction = 1
-        self.sprite = pygame.image.load(enemieSprite).convert()
+        self.sprite = pygame.image.load(enemieSprite).convert_alpha()
         Entity.__init__(self, x, y + 10, self.sprite.get_width(), 
           self.sprite.get_height(), 0)
         self.hp = 3
