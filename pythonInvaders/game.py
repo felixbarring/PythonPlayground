@@ -31,10 +31,11 @@ class Entity:
         return a and b
 
     def intersects(self, x, y, width, height):
-        return ((self.xPos > x and self.xPos < (x + width) or 
-            ((self.xPos + self.width) > x and (self.xPos + self.width) < (x + width))) and (
-                (self.yPos > y and self.yPos < (y + height) or  
-                 ((self.yPos + self.height) > y and (self.yPos + self.height) < (y + height)))))
+        a = (self.xPos >= x and self.xPos < (x + width) or (
+            (self.xPos + self.width) > x and (self.xPos + self.width) <= (x + width)))
+        b = (self.yPos >= y and self.yPos < (y + height) or (
+            (self.yPos + self.height) > y and (self.yPos + self.height) <= (y + height)))
+        return a and b 
 
 class Blinker:
   
@@ -70,7 +71,7 @@ class Blinker:
 
 class Player(Entity):
   
-    shootCoolDown = 200.0 # Five shoots each second :-)
+    shootCoolDown = 200.0 # Five shoots each second
     
     def __init__(self, screen, projectiles):
         self.screen = screen
@@ -131,13 +132,13 @@ class Enemie(Entity):
         self.direction = 1
         self.sprite = pygame.image.load(enemieSprite).convert_alpha()
         Entity.__init__(self, x, y + 10, self.sprite.get_width(), 
-          self.sprite.get_height(), 0)
+          self.sprite.get_height(), 1)
         self.hp = 3
         self.blinker = Blinker()
 
     def update(self):
         self.oldXPos = self.xPos
-        self.xPos += self.direction
+        self.xPos += self.direction * self.movementSpeed
         self.blinker.update(1)
         if self.blinker.shouldDraw():
             self.screen.blit(self.sprite, (self.xPos, self.yPos))
@@ -163,6 +164,9 @@ class EnemieManager:
     rows = 10
     columns = 3
     
+    xSpacing = 40
+    ySpacing = 30
+    
     def __init__(self, screen, playerShoots):
         self.screen = screen
         self.playerShoots = playerShoots
@@ -172,7 +176,9 @@ class EnemieManager:
     def createEnemies(self):
         for i in range(0, EnemieManager.columns):
             for j in range(0, EnemieManager.rows):
-                self.enemies.append(Enemie(self.screen, j * 40, i * 30))
+                self.enemies.append(Enemie(self.screen, 
+                                           j * EnemieManager.xSpacing, 
+                                           i * EnemieManager.ySpacing))
 
     def update(self):
         map(Enemie.update, self.enemies)
@@ -192,6 +198,14 @@ class EnemieManager:
         
             if len(self.enemies) == 0:
                 self.createEnemies()
+                
+    def intersectWithEnemies(self, x, y, width, height):
+        
+        for e in self.enemies:
+            if e.intersects(x, y, width, height):
+                return True
+            
+        return False
 
 def main():
 
@@ -230,10 +244,14 @@ def main():
         projectiles[:] = [proj for proj in projectiles 
                           if proj.intersects(0, 0, screenWidth, screenHeight)]
         
-        for projectile in projectiles:
-            projectile.update()
-    
+        map(Projectile.update, projectiles)
+        
         pygame.display.flip()
+        
+        if enemiManager.intersectWithEnemies(player.xPos, player.yPos, 
+                                             player.width, player.height):
+            #TODO Fix some game over text when the player dies.
+            break
                 
 if __name__ == '__main__': main()
 
