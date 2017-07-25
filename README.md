@@ -4,6 +4,8 @@ Here follows information for each project.
 
 ## Python Invaders
 
+![alt tag](pythonInvaders/screenShot.png)
+
 A simple clone of the well known game Space Invaders.
 Uses python 2 and PyGame. To install PyGame on Ubuntu enter the following:
 
