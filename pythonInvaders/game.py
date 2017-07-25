@@ -144,6 +144,7 @@ class Projectile(Entity):
 class Enemie(Entity):
 
     chanceOfShooting = 1000
+    speed = 0
     
     def __init__(self, screen, x, y, enemieShoots):
         self.oldXPos = x
@@ -151,7 +152,7 @@ class Enemie(Entity):
         self.direction = 1
         self.sprite = pygame.image.load(enemieSprite).convert_alpha()
         Entity.__init__(self, x, y + 10, self.sprite.get_width(), 
-          self.sprite.get_height(), 1)
+          self.sprite.get_height(), Enemie.speed)
         self.hp = 3
         self.blinker = Blinker()
         self.enemieShoots = enemieShoots
@@ -199,6 +200,9 @@ class EnemieManager:
         self.createEnemies()
     
     def createEnemies(self):
+        Enemie.speed = Enemie.speed + 1
+        if Enemie.chanceOfShooting > 100:
+            Enemie.chanceOfShooting = Enemie.chanceOfShooting - 200 
         for i in range(0, EnemieManager.columns):
             for j in range(0, EnemieManager.rows):
                 self.enemies.append(Enemie(self.screen, 
