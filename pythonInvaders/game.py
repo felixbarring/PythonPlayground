@@ -3,7 +3,8 @@
 try:
     import sys
     import pygame
-    from pygame.locals import *
+    from random import randint
+    #from pygame.locals import *
 except ImportError, err:
     print "Failed to load module. %s" % (err)
 
@@ -73,9 +74,10 @@ class Player(Entity):
   
     shootCoolDown = 200.0 # Five shoots each second
     
-    def __init__(self, screen, projectiles):
+    def __init__(self, screen, projectiles, enemieProjectiles):
         self.screen = screen
         self.projectiles = projectiles
+        self.enemieProjectils = enemieProjectiles
         self.playerSprite = pygame.image.load(playerSprite).convert_alpha()
         Entity.__init__(self, screenWidth / 2, screenHeight - 50, 
                         self.playerSprite.get_width(), 
@@ -83,6 +85,7 @@ class Player(Entity):
         self.halfWidth = self.width / 2.0
         self.shootCoolDownCounter = 0
         self.hp = 5
+        self.blinker = Blinker()
 
     def update(self, keys, time):
         self.shootCoolDownCounter += time
@@ -92,8 +95,7 @@ class Player(Entity):
             self.shootCoolDownCounter = 0.0
             # TODO This assumes that the Player and The Projectil has the same
             # width.
-            projectile = Projectile(self.screen, self.xPos, 
-              self.yPos, -1)
+            projectile = Projectile(self.screen, self.xPos, self.yPos, -1)
             self.projectiles.append(projectile)
         
         direction = 0
@@ -105,11 +107,26 @@ class Player(Entity):
         if direction != 0:
             self.xPos += direction * self.movementSpeed
         
-        # TODO Remove the hardcode of the screen size...
         if not self.inside(0, 0, screenWidth, screenHeight):
             self.xPos += -direction * self.movementSpeed
+            
+        hurt = False
+        for e in self.enemieProjectils:
+            hurt = e.intersects(self.xPos, self.yPos, self.width, self.height)
+            if hurt:
+                self.enemieProjectils.remove(e)
+                break
+        if hurt:
+            self.hp = self.hp - 1
+            self.blinker.activate()
         
-        self.screen.blit(self.playerSprite, (self.xPos, self.yPos))
+        self.blinker.update(1)
+        
+        if self.blinker.shouldDraw():
+            self.screen.blit(self.playerSprite, (self.xPos, self.yPos))
+            
+    def isAlive(self):
+        return self.hp >= 0
     
 class Projectile(Entity):
 
@@ -126,7 +143,9 @@ class Projectile(Entity):
 
 class Enemie(Entity):
 
-    def __init__(self, screen, x, y):
+    chanceOfShooting = 1000
+    
+    def __init__(self, screen, x, y, enemieShoots):
         self.oldXPos = x
         self.screen = screen
         self.direction = 1
@@ -135,6 +154,7 @@ class Enemie(Entity):
           self.sprite.get_height(), 1)
         self.hp = 3
         self.blinker = Blinker()
+        self.enemieShoots = enemieShoots
 
     def update(self):
         self.oldXPos = self.xPos
@@ -142,6 +162,10 @@ class Enemie(Entity):
         self.blinker.update(1)
         if self.blinker.shouldDraw():
             self.screen.blit(self.sprite, (self.xPos, self.yPos))
+        
+        if randint(0, Enemie.chanceOfShooting) == Enemie.chanceOfShooting:
+            projectile = Projectile(self.screen, self.xPos, self.yPos, 1)
+            self.enemieShoots.append(projectile)
     
     def switchDirection(self):
         self.direction = -self.direction
@@ -167,9 +191,10 @@ class EnemieManager:
     xSpacing = 40
     ySpacing = 30
     
-    def __init__(self, screen, playerShoots):
+    def __init__(self, screen, playerShoots, enemieShots):
         self.screen = screen
         self.playerShoots = playerShoots
+        self.enemieShoots = enemieShots
         self.enemies = []
         self.createEnemies()
     
@@ -178,7 +203,8 @@ class EnemieManager:
             for j in range(0, EnemieManager.rows):
                 self.enemies.append(Enemie(self.screen, 
                                            j * EnemieManager.xSpacing, 
-                                           i * EnemieManager.ySpacing))
+                                           i * EnemieManager.ySpacing, 
+                                           self.enemieShoots))
 
     def update(self):
         map(Enemie.update, self.enemies)
@@ -220,9 +246,10 @@ def main():
     
     pygame.display.flip()
     
-    projectiles = []
-    player = Player(screen, projectiles)
-    enemiManager = EnemieManager(screen, projectiles)
+    playerProjectiles = []
+    enemieProjectiles = []
+    player = Player(screen, playerProjectiles, enemieProjectiles)
+    enemiManager = EnemieManager(screen, playerProjectiles, enemieProjectiles)
     
     maxFps = 60
     clock = pygame.time.Clock()
@@ -241,16 +268,23 @@ def main():
         player.update(keys, timePassed)
         enemiManager.update()
         
-        projectiles[:] = [proj for proj in projectiles 
+        playerProjectiles[:] = [proj for proj in playerProjectiles 
                           if proj.intersects(0, 0, screenWidth, screenHeight)]
         
-        map(Projectile.update, projectiles)
+        enemieProjectiles[:] = [proj for proj in enemieProjectiles 
+                          if proj.intersects(0, 0, screenWidth, screenHeight)]
+        
+        map(Projectile.update, playerProjectiles)
+        map(Projectile.update, enemieProjectiles)
         
         pygame.display.flip()
         
         if enemiManager.intersectWithEnemies(player.xPos, player.yPos, 
                                              player.width, player.height):
             #TODO Fix some game over text when the player dies.
+            break
+        
+        if not player.isAlive():
             break
                 
 if __name__ == '__main__': main()
